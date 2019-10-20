@@ -1,0 +1,5 @@
+*.o
+run
+sudoku
+tmp*
+tmp*.*
