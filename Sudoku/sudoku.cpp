@@ -468,6 +468,7 @@ bool SudokuTransaction::updateSinglePossibilities(bool dbgMethod) {
                 nodesAddedToQueue.emplace(i, toAdd);
             }
         }
+        if (singleNodes.empty()) break;
         auto& nextStep = singleNodes.front();
         singleNodes.pop();
         nodesAddedToQueue.erase(nextStep.getIndex());
