@@ -27,7 +27,10 @@ class Step {
     SudokuValue value;
 
  public:
-    explicit Step(unsigned i, SudokuValue v) : index(i), value(v) { }
+    explicit Step(unsigned i, SudokuValue v) : index(i), value(v) {
+        std::cout << "  Step created: index = " << index << ", value = " <<
+            value << std::endl;
+    }
     unsigned getIndex() const { return index; }
     unsigned getValue() const { return value; }
 };

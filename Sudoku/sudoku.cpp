@@ -113,7 +113,6 @@ namespace Sudoku {
         cols.fill(0);
         squares.fill(0);
         allowedState.fill(0);
-        possibilities.fill(0);
         valuePresentInRows.fill(0);
         valuePresentInCols.fill(0);
         valuePresentInSquares.fill(0);
@@ -179,6 +178,7 @@ namespace Sudoku {
     SudokuTransaction::SudokuTransaction(const SudokuTransaction& parent,
             unsigned index,
             SudokuValue value) {
+        ++tx;
         unsigned row, col;
         reverseIndexLookup(index, &row, &col);
         copyState(parent);
@@ -191,6 +191,7 @@ namespace Sudoku {
         // unnecessary forking off of transactions.
         bool dbgMethod = true;
         validTransaction &= updateSinglePossibilities(dbgMethod);
+        std::cout << " Updated single possibility in TX " << tx << std::endl;
         if (solved || !validTransaction) return;
         validTransaction &= solve();
     }
@@ -249,6 +250,7 @@ namespace Sudoku {
     }
 
     bool SudokuTransaction::processAllowed(bool dbgMethod) {
+        possibilities.fill(0);
         bool foundPossibilities = false;
         for (unsigned i = 0; i < GRID_SIZE; i++) {
             for (unsigned j = 0; j < GRID_SIZE; j++) {
@@ -340,9 +342,12 @@ namespace Sudoku {
             if (possibilities[i] == 0) continue;
             if (min_possibilities > possibilities[i]) {
                 min_possibilities = possibilities[i];
+                std::cout << "Min possibility detected to be: " <<
+                    min_possibilities << std::endl;
                 rv = i;
             }
         }
+        std::cout << " min: " << rv << ", " << min_possibilities << std::endl;
         if (dbgMethod) {
             unsigned row, col;
             reverseIndexLookup(rv, &row, &col);
@@ -363,6 +368,8 @@ namespace Sudoku {
         // puzzle.
         if (values.size() == 0) return false;
         for (auto value : values) {
+            std::cout << "  Next step is to set index " << nextCellToFill <<
+                ": " << value << std::endl;
             std::unique_ptr<SudokuTransaction> nextStep =
                 std::make_unique<SudokuTransaction>(*this, nextCellToFill,
                         value);
@@ -400,6 +407,10 @@ namespace Sudoku {
             throw std::runtime_error(ss.str());
         }
         const auto possibilities = getPossibilities(row, col);
+        std::stringstream ss;
+        for (auto val : possibilities)
+            ss << val << " ";
+        std::cout << ss.str() << std::endl;
         if (possibilities.size() != 1) {
             std::stringstream ss;
             ss << "Discrepancy between possibilities and actual possible "
@@ -434,6 +445,9 @@ namespace Sudoku {
         do {
             for (unsigned i = 0; i < possibilities.size(); i++) {
                 if (possibilities.at(i) == 1) {
+                    std::cout << "Single possibility: " <<
+                        getSinglePossibility(i) << " for index " << i <<
+                        std::endl;
                     singleNodes.push(Step(i, getSinglePossibility(i)));
                     if (dbgMethod)
                         std::cout << "Single possibility for index " << i <<
