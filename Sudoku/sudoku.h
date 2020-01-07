@@ -18,7 +18,9 @@ using OneDGrid = array<T, GRID_SIZE>;
 template<typename T>
 using TwoDGrid = array<T, GRID_SIZE * GRID_SIZE>;
 
-inline unsigned getIndex(unsigned row, unsigned col) { return (row * GRID_SIZE + col); }
+inline unsigned getIndex(unsigned row, unsigned col) {
+    return (row * GRID_SIZE + col);
+}
 
 class Step {
     unsigned index;
@@ -40,7 +42,8 @@ class CellState {
     explicit CellState(unsigned i, SudokuValue s, SudokuValue a, SudokuValue p)
         : index_i(i), state_i(s), allowed_i(a), possibilities_i(p) { }
     explicit CellState(const CellState& c)
-        : index_i(c.index()), state_i(c.state()), allowed_i(c.allowed()), possibilities_i(c.possibilities()) { }
+        : index_i(c.index()), state_i(c.state()), allowed_i(c.allowed()),
+          possibilities_i(c.possibilities()) { }
 
     unsigned index() const { return index_i; }
     unsigned state() const { return state_i; }
@@ -65,14 +68,15 @@ class SudokuTransaction {
     OneDGrid<SudokuValue> cols;
     // squares[k] = All the values already present in the kth square.
     // k = 0, for the SQUARE_SIZE * SQUARE_SIZE grid starting at (0, 0)
-    // k = 1, for the SQUARE_SIZE * SQUARE_SIZE grid starting at (0, SQUARE_SIZE)
+    // k = 1, for the SQUARE_SIZE * SQUARE_SIZE grid starting at (0,
+    // SQUARE_SIZE)
     OneDGrid<SudokuValue> squares;
     // allowedState[i][j] = All the numbers allowed for the cell at (i, j)
     TwoDGrid<SudokuValue> allowedState;
     // possibilities[i][j] = Values possible for the cell at (i, j)
     TwoDGrid<SudokuValue> possibilities;
-    // valuePresentIn*[i][j] = true, if the sudoku cell value i is present in the particular row,
-    // column, or square, i.
+    // valuePresentIn*[i][j] = true, if the sudoku cell value i is present in
+    // the particular row, column, or square, i.
     TwoDGrid<bool> valuePresentInRows;
     TwoDGrid<bool> valuePresentInCols;
     TwoDGrid<bool> valuePresentInSquares;
@@ -82,10 +86,12 @@ class SudokuTransaction {
 
     SudokuValue getValue(unsigned k) const;
     unsigned getSquareIndex(unsigned row, unsigned col) const;
-    bool isCandidatePossible(unsigned candidateValue, unsigned row, unsigned col,
-                             unsigned sqIndex, bool dbgMethod=false) const;
+    bool isCandidatePossible(unsigned candidateValue, unsigned row,
+                             unsigned col, unsigned sqIndex,
+                             bool dbgMethod=false) const;
 
-    const vector<SudokuValue> getPossibilities(unsigned row, unsigned col) const;
+    const vector<SudokuValue>
+        getPossibilities(unsigned row, unsigned col) const;
     const vector<SudokuValue> getPossibilities(unsigned index) const;
     SudokuValue getSinglePossibility(unsigned index) const;
     SudokuValue getSinglePossibility(unsigned row, unsigned col) const;
@@ -96,33 +102,62 @@ class SudokuTransaction {
     unsigned getNextCellToFill(bool dbgMethod) const;
 
  public:
-    explicit SudokuTransaction(const array<SudokuValue, GRID_SIZE * GRID_SIZE>& input);
-    explicit SudokuTransaction(const SudokuTransaction& parent, unsigned index, SudokuValue value);
+    explicit SudokuTransaction(
+            const array<SudokuValue, GRID_SIZE * GRID_SIZE>& input);
+    explicit SudokuTransaction(const SudokuTransaction& parent,
+                               unsigned index,
+                               SudokuValue value);
 
     bool isValidTransaction() const { return validTransaction; }
     bool isSolved() const { return solved; }
     bool solve(bool dbgMethod = false);
     void printSudokuState() const;
 
-    SudokuValue getSudokuState(unsigned row, unsigned col) const { return sudokuState.at(getIndex(row, col)); }
+    SudokuValue getSudokuState(unsigned row, unsigned col) const {
+        return sudokuState.at(getIndex(row, col));
+    }
     SudokuValue getRow(unsigned row) const { return rows.at(row); }
     SudokuValue getCol(unsigned col) const { return cols.at(col); }
-    SudokuValue getSquare(unsigned sqIndex) const { return squares.at(sqIndex); }
-    SudokuValue getAllowedState(unsigned row, unsigned col) const { return allowedState.at(getIndex(row, col)); }
-    SudokuValue getPossibleValues(unsigned row, unsigned col) const { return possibilities.at(getIndex(row, col)); }
-    bool rowPresent(unsigned row, unsigned col) const { return valuePresentInRows.at(getIndex(row, col)); }
-    bool colPresent(unsigned row, unsigned col) const { return valuePresentInCols.at(getIndex(row, col)); }
-    bool squarePresent(unsigned row, unsigned col) const { return valuePresentInSquares.at(getIndex(row, col)); }
+    SudokuValue getSquare(unsigned sqIndex) const {
+        return squares.at(sqIndex);
+    }
+    SudokuValue getAllowedState(unsigned row, unsigned col) const {
+        return allowedState.at(getIndex(row, col));
+    }
+    SudokuValue getPossibleValues(unsigned row, unsigned col) const {
+        return possibilities.at(getIndex(row, col));
+    }
+    bool rowPresent(unsigned row, unsigned col) const {
+        return valuePresentInRows.at(getIndex(row, col));
+    }
+    bool colPresent(unsigned row, unsigned col) const {
+        return valuePresentInCols.at(getIndex(row, col));
+    }
+    bool squarePresent(unsigned row, unsigned col) const {
+        return valuePresentInSquares.at(getIndex(row, col));
+    }
 
-    const array<SudokuValue, GRID_SIZE * GRID_SIZE>& getSudokuState() const { return sudokuState; }
+    const array<SudokuValue, GRID_SIZE * GRID_SIZE>& getSudokuState() const {
+        return sudokuState;
+    }
     const array<SudokuValue, GRID_SIZE>& getRows() const { return rows; }
     const array<SudokuValue, GRID_SIZE>& getCols() const { return cols; }
     const array<SudokuValue, GRID_SIZE>& getSquares() const { return squares; }
-    const array<SudokuValue, GRID_SIZE * GRID_SIZE>& getAllowedState() const { return allowedState; }
-    const array<SudokuValue, GRID_SIZE * GRID_SIZE>& getPossibilities() const { return possibilities; }
-    const array<bool, GRID_SIZE * GRID_SIZE>& getValuePresentInRows() const { return valuePresentInRows; }
-    const array<bool, GRID_SIZE * GRID_SIZE>& getValuePresentInCols() const { return valuePresentInCols; }
-    const array<bool, GRID_SIZE * GRID_SIZE>& getValuePresentInSquares() const { return valuePresentInSquares; }
+    const array<SudokuValue, GRID_SIZE * GRID_SIZE>& getAllowedState() const {
+        return allowedState;
+    }
+    const array<SudokuValue, GRID_SIZE * GRID_SIZE>& getPossibilities() const {
+        return possibilities;
+    }
+    const array<bool, GRID_SIZE * GRID_SIZE>& getValuePresentInRows() const {
+        return valuePresentInRows;
+    }
+    const array<bool, GRID_SIZE * GRID_SIZE>& getValuePresentInCols() const {
+        return valuePresentInCols;
+    }
+    const array<bool, GRID_SIZE * GRID_SIZE>& getValuePresentInSquares() const {
+        return valuePresentInSquares;
+    }
 };
 
 class SudokuSolver {
