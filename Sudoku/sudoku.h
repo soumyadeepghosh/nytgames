@@ -28,8 +28,15 @@ class Step {
 
  public:
     explicit Step(unsigned i, SudokuValue v) : index(i), value(v) {
-        std::cout << "  Step created: index = " << index << ", value = " <<
+        std::cout << "\tStep created: index = " << index << ", value = " <<
             value << std::endl;
+    }
+    explicit Step(const Step& s) : index(s.getIndex()), value(s.getValue()) { }
+    bool operator<(const Step& s) {
+        return index < s.getIndex();
+    }
+    bool operator==(const Step& s) {
+        return index == s.getIndex();
     }
     unsigned getIndex() const { return index; }
     unsigned getValue() const { return value; }
@@ -76,7 +83,6 @@ class SudokuTransaction {
     OneDGrid<SudokuValue> squares;
     // allowedState[i][j] = All the numbers allowed for the cell at (i, j)
     TwoDGrid<SudokuValue> allowedState;
-    // possibilities[i][j] = Values possible for the cell at (i, j)
     TwoDGrid<SudokuValue> possibilities;
     // valuePresentIn*[i][j] = true, if the sudoku cell value i is present in
     // the particular row, column, or square, i.
@@ -105,6 +111,7 @@ class SudokuTransaction {
     unsigned getNextCellToFill(bool dbgMethod) const;
 
  public:
+    static uint32_t tx;
     explicit SudokuTransaction(
             const array<SudokuValue, GRID_SIZE * GRID_SIZE>& input);
     explicit SudokuTransaction(const SudokuTransaction& parent,
