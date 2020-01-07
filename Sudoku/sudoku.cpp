@@ -24,6 +24,10 @@ bool SudokuSolver::processCell(char inputChar, unsigned row, unsigned col) {
 }
 
 void SudokuSolver::printSudokuState() const {
+    rootTransaction->printSudokuState();
+}
+
+void SudokuTransaction::printSudokuState() const {
     for (unsigned i = 0; i < GRID_SIZE; i++) {
         std::stringstream ss;
         for (unsigned j = 0; j < GRID_SIZE; j++) {
@@ -80,19 +84,24 @@ SudokuSolver::SudokuSolver(const char* inputFileName) {
         saneConfig = false;
         std::cout << " Root configuration found invalid" << std::endl;
     }
-    commitSudokuState();
 }
 
 bool SudokuSolver::solve() {
     if (rootTransaction->isSolved()) {
         std::cout << " Solved." << std::endl;
+        commitSudokuState();
         return true;
     }
-    rootTransaction->solve();
-    if (!rootTransaction->isSolved()) {
+    saneConfig &= rootTransaction->solve(true);
+    if (!rootTransaction->isValidTransaction()) {
         std::cout << " No solution possible." << std::endl;
         return false;
     }
+    if (!rootTransaction->isSolved()) {
+        std::cout << " No solution found." << std::endl;
+        return false;
+    }
+    commitSudokuState();
     return true;
 }
 
@@ -157,7 +166,7 @@ SudokuTransaction::SudokuTransaction(const array<SudokuValue, GRID_SIZE * GRID_S
     std::cout << " Calculated all allowed values." << std::endl;
     dbgMethod = true;
     validTransaction &= updateSinglePossibilities(dbgMethod);
-    std::cout << " Created all transactions." << std::endl;
+    std::cout << " Created all possibilities." << std::endl;
 }
 
 SudokuTransaction::SudokuTransaction(const SudokuTransaction& parent,
@@ -169,10 +178,13 @@ SudokuTransaction::SudokuTransaction(const SudokuTransaction& parent,
     validTransaction = true;
     std::cout << "New TX setting (" << row << ", " << col << ") to " << value << std::endl;
     setCell(getIndex(row, col), value);
+    if (solved || !validTransaction) return;
     // Update all single possibility states that emerged. This prevents unnecessary forking off of
     // transactions.
     bool dbgMethod = true;
     validTransaction &= updateSinglePossibilities(dbgMethod);
+    if (solved || !validTransaction) return;
+    validTransaction &= solve();
 }
 
 void SudokuTransaction::reverseIndexLookup(unsigned index, unsigned* row, unsigned* col) const {
@@ -202,6 +214,7 @@ void SudokuTransaction::setCell(unsigned index, SudokuValue value, bool dbgMetho
     allowedState[index] = 0;
     possibilities[index] = 0;
 
+    dbgMethod = false;
     if (!processAllowed(dbgMethod)) {
         validTransaction = false;
         return;
@@ -218,6 +231,8 @@ void SudokuTransaction::copyState(const SudokuTransaction& parent) {
     valuePresentInRows = parent.getValuePresentInRows();
     valuePresentInCols = parent.getValuePresentInCols();
     valuePresentInSquares = parent.getValuePresentInSquares();
+    solved = parent.isSolved();
+    validTransaction = parent.isValidTransaction();
 }
 
 bool SudokuTransaction::processAllowed(bool dbgMethod) {
@@ -298,13 +313,57 @@ bool SudokuTransaction::isCandidatePossible(unsigned candidateValue,
     return true;
 }
 
-bool SudokuTransaction::solve() {
+unsigned SudokuTransaction::getNextCellToFill(bool dbgMethod) const {
+    unsigned rv = sudokuState.size();
+    unsigned min_possibilities = GRID_SIZE + 1;
+    for (unsigned i = 0; i < possibilities.size(); i++) {
+        if (possibilities[i] == 0) continue;
+        if (min_possibilities > possibilities[i]) {
+            min_possibilities = possibilities[i];
+            rv = i;
+        }
+    }
+    if (dbgMethod) {
+        unsigned row, col;
+        reverseIndexLookup(rv, &row, &col);
+        std::cout << "    Next cell to fill: (" << row << ", " << col << ")" << std::endl;
+    }
+    return rv;
+}
+
+bool SudokuTransaction::solve(bool dbgMethod) {
+    // This is called after all the single possibility cells are filled out, and there is at least
+    // one unfilled cell in the puzzle with multiple possibilities.
+    const auto nextCellToFill = getNextCellToFill(dbgMethod);
+    if (nextCellToFill == sudokuState.size()) return false;
+    const auto values = getPossibilities(nextCellToFill);
+    // If there are no possibilities, then clearly we cannot solve this puzzle.
+    if (values.size() == 0) return false;
+    for (auto value : values) {
+        std::unique_ptr<SudokuTransaction> nextStep =
+            std::make_unique<SudokuTransaction>(*this, nextCellToFill, value);
+        if (!nextStep->isValidTransaction()) {
+            std::cout << "  Not a valid new transaction." << std::endl;
+            nextStep->printSudokuState();
+            continue;
+        }
+        if (!nextStep->isSolved()) {
+            std::cout << "  Not solved." << std::endl;
+            nextStep->printSudokuState();
+            continue;
+        }
+        if (nextStep->isSolved()) {
+            std::cout << " Found a solution." << std::endl;
+            copyState(*nextStep);
+            break;
+        }
+    }
     return true;
 }
 
 SudokuValue SudokuTransaction::getSinglePossibility(unsigned index) const {
-    unsigned row = index / GRID_SIZE;
-    unsigned col = index % GRID_SIZE; 
+    unsigned row, col;
+    reverseIndexLookup(index, &row, &col);
     return getSinglePossibility(row, col);
 }
 
@@ -322,6 +381,12 @@ SudokuValue SudokuTransaction::getSinglePossibility(unsigned row, unsigned col) 
         throw std::runtime_error(ss.str());
     }
     return possibilities.at(0);
+}
+
+const vector<SudokuValue> SudokuTransaction::getPossibilities(unsigned index) const {
+    unsigned row, col;
+    reverseIndexLookup(index, &row, &col);
+    return getPossibilities(row, col);
 }
 
 const vector<SudokuValue> SudokuTransaction::getPossibilities(unsigned row, unsigned col) const {

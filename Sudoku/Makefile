@@ -1,14 +1,14 @@
-CC=g++
-CFLAGS=-I. --std=c++17 -O3
+CXX=g++
+CXXFLAGS=-I. --std=c++17 -O3
 PROFILE_FLAGS=-g
 DEPS = sudoku.h
 OBJ = sudoku.o main.o
 
 %.o : %.cpp $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(PROFILE_FLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(PROFILE_FLAGS)
 
 sudoku: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(PROFILE_FLAGS)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(PROFILE_FLAGS)
 
 clean:
 	rm -f *.o sudoku

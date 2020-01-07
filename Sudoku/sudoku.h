@@ -1,6 +1,7 @@
 #ifndef SUDOKU_H_
 #define SUDOKU_H_
 
+#include <memory>
 #include <array>
 #include <vector>
 
@@ -78,7 +79,6 @@ class SudokuTransaction {
 
     void copyState(const SudokuTransaction& parent);
     bool processAllowed(bool dbgMethod = false);
-    bool isSolvable();
 
     SudokuValue getValue(unsigned k) const;
     unsigned getSquareIndex(unsigned row, unsigned col) const;
@@ -86,12 +86,14 @@ class SudokuTransaction {
                              unsigned sqIndex, bool dbgMethod=false) const;
 
     const vector<SudokuValue> getPossibilities(unsigned row, unsigned col) const;
+    const vector<SudokuValue> getPossibilities(unsigned index) const;
     SudokuValue getSinglePossibility(unsigned index) const;
     SudokuValue getSinglePossibility(unsigned row, unsigned col) const;
     bool updateSinglePossibilities(bool dbgMethod = false);
     void setCell(unsigned index, SudokuValue value, bool dbgMethod = false);
     void initState();
     void reverseIndexLookup(unsigned index, unsigned* row, unsigned* col) const;
+    unsigned getNextCellToFill(bool dbgMethod) const;
 
  public:
     explicit SudokuTransaction(const array<SudokuValue, GRID_SIZE * GRID_SIZE>& input);
@@ -99,7 +101,8 @@ class SudokuTransaction {
 
     bool isValidTransaction() const { return validTransaction; }
     bool isSolved() const { return solved; }
-    bool solve();
+    bool solve(bool dbgMethod = false);
+    void printSudokuState() const;
 
     SudokuValue getSudokuState(unsigned row, unsigned col) const { return sudokuState.at(getIndex(row, col)); }
     SudokuValue getRow(unsigned row) const { return rows.at(row); }
