@@ -27,10 +27,7 @@ class Step {
     SudokuValue value;
 
  public:
-    explicit Step(unsigned i, SudokuValue v) : index(i), value(v) {
-        std::cout << "\tStep created: index = " << index << ", value = " <<
-            value << std::endl;
-    }
+    explicit Step(unsigned i, SudokuValue v) : index(i), value(v) { }
     explicit Step(const Step& s) : index(s.getIndex()), value(s.getValue()) { }
     bool operator<(const Step& s) {
         return index < s.getIndex();
@@ -41,6 +38,8 @@ class Step {
     unsigned getIndex() const { return index; }
     unsigned getValue() const { return value; }
 };
+
+#if 0
 
 class CellState {
     unsigned index_i;
@@ -67,6 +66,8 @@ class CellState {
     void setPossibilities(SudokuValue p) { possibilities_i = p; }
 };
 
+#endif
+
 class SudokuTransaction {
     bool solved;
     bool validTransaction;
@@ -91,24 +92,23 @@ class SudokuTransaction {
     TwoDGrid<bool> valuePresentInSquares;
 
     void copyState(const SudokuTransaction& parent);
-    bool processAllowed(bool dbgMethod = false);
+    bool processAllowed();
 
     SudokuValue getValue(unsigned k) const;
     unsigned getSquareIndex(unsigned row, unsigned col) const;
     bool isCandidatePossible(unsigned candidateValue, unsigned row,
-                             unsigned col, unsigned sqIndex,
-                             bool dbgMethod=false) const;
+                             unsigned col, unsigned sqIndex) const;
 
     const vector<SudokuValue>
         getPossibilities(unsigned row, unsigned col) const;
     const vector<SudokuValue> getPossibilities(unsigned index) const;
     SudokuValue getSinglePossibility(unsigned index) const;
     SudokuValue getSinglePossibility(unsigned row, unsigned col) const;
-    bool updateSinglePossibilities(bool dbgMethod = false);
-    void setCell(unsigned index, SudokuValue value, bool dbgMethod = false);
+    bool updateSinglePossibilities();
+    void setCell(unsigned index, SudokuValue value);
     void initState();
     void reverseIndexLookup(unsigned index, unsigned* row, unsigned* col) const;
-    unsigned getNextCellToFill(bool dbgMethod) const;
+    unsigned getNextCellToFill() const;
 
  public:
     static uint32_t tx;
@@ -120,7 +120,7 @@ class SudokuTransaction {
 
     bool isValidTransaction() const { return validTransaction; }
     bool isSolved() const { return solved; }
-    bool solve(bool dbgMethod = false);
+    bool solve();
     void printSudokuState() const;
 
     SudokuValue getSudokuState(unsigned row, unsigned col) const {
